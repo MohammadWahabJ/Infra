@@ -1,28 +1,25 @@
-# Ignore Terraform working directory and state files
+# Ignore Terraform working directory and state files in all directories (parent and subdirectories)
 **/.terraform/*
-*.tfstate
-*.tfstate.*
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/*.tfvars
+
+# Ignore backup files
+*.backup
 
 # Ignore crash logs
 crash.log
 
-# Ignore Terraform variable and override files
-*.tfvars
+# Ignore override files (if you use them in the project)
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Ignore sensitive files (like SSH keys, certificates, etc.)
+# Ignore sensitive files (such as SSH keys, certificates, etc.)
 *.pem
 *.key
 *.p12
 *.cer
 *.csr
-
-# Ignore backup files
-*.backup
-
-# Ignore Terraform CLI configuration
-.terraformrc
-terraform.rc
