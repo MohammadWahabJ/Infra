@@ -15,10 +15,10 @@ crash.log
 terraform.tfvars
 
 # Ignore the .terraform directory where Terraform keeps provider binaries
-.terraform/
+*.terraform/
 
 # Optionally ignore Terraform lock file
-.terraform.lock.hcl
+*.terraform.lock.hcl
 
 # Ignore all text files (test.txt, test_test.txt, etc.)
 *.txt
