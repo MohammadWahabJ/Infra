@@ -22,30 +22,30 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 # Apply a bucket policy to allow public access to objects in the bucket
-resource "aws_s3_bucket_policy" "public_policy" {
-  bucket = aws_s3_bucket.public_bucket.id
+# resource "aws_s3_bucket_policy" "public_policy" {
+#   bucket = aws_s3_bucket.public_bucket.id
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",  
-        Principal = "*",   
-        Action = "s3:GetObject", 
-        Resource = "${aws_s3_bucket.public_bucket.arn}/*"  
-      }
-    ]
-  })
-}
-
-
+#   policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [
+#       {
+#         Effect = "Allow",  
+#         Principal = "*",   
+#         Action = "s3:GetObject", 
+#         Resource = "${aws_s3_bucket.public_bucket.arn}/*"  
+#       }
+#     ]
+#   })
+# }
 
 
 
 
 
 
-# CloudFront Origin Access Identity (OAI) to secure S3 bucket content
+
+
+#CloudFront Origin Access Identity (OAI) to secure S3 bucket content
 resource "aws_cloudfront_origin_access_identity" "s3_identity" {
   comment = "Allow CloudFront to access S3"
 }
@@ -101,4 +101,25 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   tags = {
     Name = "S3-to-CloudFront"
   }
+}
+
+
+
+#Attach a new bucket policy to allow CloudFront OAI to read from the S3 bucket
+resource "aws_s3_bucket_policy" "cloudfront_policy" {
+  bucket = aws_s3_bucket.public_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${aws_cloudfront_origin_access_identity.s3_identity.iam_arn}"
+        },
+        Action   = "s3:GetObject",
+        Resource = "${aws_s3_bucket.public_bucket.arn}/*"
+      }
+    ]
+  })
 }
