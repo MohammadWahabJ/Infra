@@ -299,3 +299,24 @@ resource "aws_db_subnet_group" "my_rds_subnet_group" {
     Name = "MyRDSSubnetGroup"
   }
 }
+
+
+# RDS Instance (PostgreSQL) in a single AZ (ap-south-1b)
+resource "aws_db_instance" "my_rds_instance" {
+  allocated_storage    = 20
+  engine               = "postgres"     # PostgreSQL engine
+  instance_class       = "db.t3.micro"  # Instance class for cost-efficiency
+  username             = "dbtestuser"        # Master username for the database
+  password             = "password123"  # Master password for the database (ensure it's secure)
+  db_subnet_group_name = aws_db_subnet_group.my_rds_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]  # Reuse the RDS security group
+  publicly_accessible  = true           # Set to true if you want the RDS to be publicly accessible
+  skip_final_snapshot  = true           # Skip snapshot when deleting (optional)
+  availability_zone    = "ap-south-1b"  # Restrict RDS to one AZ (ap-south-1b)
+
+
+  tags = {
+    Name = "MyPostgresRDSInstance"
+  }
+}
+
