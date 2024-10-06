@@ -231,7 +231,7 @@ resource "aws_lb_target_group" "my_tg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.my_vpc.id
-  target_type = "ip"  # Change from "instance" to "ip" for Fargate tasks
+  target_type = "ip"  
 
   health_check {
     path                = "/"
@@ -257,5 +257,45 @@ resource "aws_lb_listener" "my_listener" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.my_tg.arn  # Forward traffic to ECS tasks in ap-south-1b
+  }
+}
+
+
+
+
+
+# DB creation section comes here............................................
+
+# Security Group for RDS (Allow MySQL traffic only from ECS Security Group)
+resource "aws_security_group" "rds_sg" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_sg.id]  # Allow traffic only from the ECS security group
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]  
+  }
+
+  tags = {
+    Name = "RDSSecurityGroup"
+  }
+}
+
+
+# RDS Subnet Group (Associates the public subnet for the RDS)
+resource "aws_db_subnet_group" "my_rds_subnet_group" {
+  name       = "my-rds-subnet-group"
+  subnet_ids = [aws_subnet.public_subnet_ecs.id,aws_subnet.public_subnet_alb.id]  # Place the RDS in the same public subnet as the ECS tasks
+
+  tags = {
+    Name = "MyRDSSubnetGroup"
   }
 }
