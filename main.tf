@@ -146,7 +146,7 @@ resource "aws_ecs_task_definition" "my_task" {
       environment = [
     {
        "name":"DB_NAME",
-       "value":"postgress"
+       "value":"postgres"
     },
     {
        "name":"DB_USER",
