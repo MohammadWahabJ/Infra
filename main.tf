@@ -130,22 +130,125 @@ resource "aws_ecs_task_definition" "my_task" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  container_definitions = jsonencode([
+    {
+      name      = "my-container"
+      image     = "${aws_ecr_repository.my_ecr_repository.repository_url}:latest"
+      memory    = 512
+      cpu       = 256
+      essential = true
 
-  container_definitions = <<DEFINITION
-[
-  {
-    "name": "my-container",
-    "image": "nginx",   
-    "essential": true,
-    "portMappings": [
-      {
-        "containerPort": 80,
-        "hostPort": 80
-      }
+      portMappings = [{
+        containerPort = 80
+        hostPort      = 80
+      }]
+
+      environment = [
+    {
+       "name":"DB_NAME",
+       "value":"postgress"
+    },
+    {
+       "name":"DB_USER",
+       "value":"dbtestuser"
+    },
+    {
+       "name":"DB_PASS",
+       "value":"password123"
+    },
+    {
+       "name":"DB_HOST",
+       "value":"terraform-20241006180357721100000001.cpekewewqm5e.ap-south-1.rds.amazonaws.com"
+    },
+    {
+       "name":"DB_PORT",
+       "value":"5432"
+    },
+    {
+       "name":"APP_SECRET",
+       "value":"sntmf1hhfxaMfckv4u16B89emqt9PTfg"
+    }
+    
     ]
+
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = "/ecs/ef-dev-ecs-task"
+          mode                  = "non-blocking"
+          awslogs-create-group  = "true"
+          max-buffer-size       = "25m"
+          awslogs-region        = "ap-south-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    },
+    {
+      name      = "aws-otel-collector"
+      image     = "public.ecr.aws/aws-observability/aws-otel-collector:v0.40.2"
+      cpu       = 0
+      essential = true
+      command   = ["--config=/etc/ecs/ecs-cloudwatch-xray.yaml"]
+
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = "/ecs/ecs-aws-otel-sidecar-collector"
+          mode                  = "non-blocking"
+          awslogs-create-group  = "true"
+          max-buffer-size       = "25m"
+          awslogs-region        = "ap-south-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    }
+  ])
+  runtime_platform {
+    cpu_architecture        = "X86_64"
+    operating_system_family = "LINUX"
   }
-]
-DEFINITION
+#   container_definitions = <<DEFINITION
+# [
+#   {
+#     "name": "my-container",
+#     "image": "nginx",   
+#     "essential": true,
+#     "environment":[
+#     {
+#        "name":"DB_NAME",
+#        "value":"postgress"
+#     },
+#     {
+#        "name":"DB_USER",
+#        "value":"dbtestuser"
+#     },
+#     {
+#        "name":"DB_PASS",
+#        "value":"password123"
+#     },
+#     {
+#        "name":"DB_HOST",
+#        "value":"terraform-20241006180357721100000001.cpekewewqm5e.ap-south-1.rds.amazonaws.com"
+#     },
+#     {
+#        "name":"DB_PORT",
+#        "value":"5432"
+#     },
+#     {
+#        "name":"APP_SECRET",
+#        "value":"sntmf1hhfxaMfckv4u16B89emqt9PTfg"
+#     }
+    
+#     ],
+#     "portMappings": [
+#       {
+#         "containerPort": 80,
+#         "hostPort": 80
+#       }
+#     ]
+#   }
+# ]
+# DEFINITION
 }
 
 # IAM Role for ECS Task Execution
@@ -271,8 +374,8 @@ resource "aws_security_group" "rds_sg" {
   vpc_id = aws_vpc.my_vpc.id
 
   ingress {
-    from_port       = 3306
-    to_port         = 3306
+    from_port       = 5432
+    to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs_sg.id]  # Allow traffic only from the ECS security group
   }
@@ -318,5 +421,22 @@ resource "aws_db_instance" "my_rds_instance" {
   tags = {
     Name = "MyPostgresRDSInstance"
   }
+}
+
+
+
+# ECR
+# Create an ECR repository
+resource "aws_ecr_repository" "my_ecr_repository" {
+  name = "my-app-repo"  # Name of the ECR repository
+
+  # Optional: Configure image scanning and retention policy
+  image_scanning_configuration {
+    scan_on_push = true  # Enable image scanning on push
+  }
+
+  image_tag_mutability = "MUTABLE"  # Allows overwriting image tags
+
+
 }
 
